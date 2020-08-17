@@ -1,0 +1,13 @@
+# opsrg reload
+# opsrg add rgname
+# opsrg del rgname
+# opsrg addmine rgname
+# opsrg delmine rgname
+# opsrg list
+# opsrg list number
+# opsrg listmine
+# opsrg listmine number
+regions:
+- yourProtectedRegion
+regionsmine:
+- youtMineRegion
