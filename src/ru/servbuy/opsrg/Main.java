@@ -1,5 +1,6 @@
 package ru.servbuy.opsrg;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.*;
 import org.bukkit.permissions.*;
 import org.bukkit.plugin.*;
@@ -15,10 +16,15 @@ public class Main extends JavaPlugin
     public static Functions functions;
     WG6 WorldGuard6;
     WG7 WorldGuard7;
+    public static String version;
     
     static {
         Main.permission = null;
+        version = Bukkit.getServer().getClass().getPackage().getName();
+        version = version.substring(version.lastIndexOf(".") + 1);
     }
+
+    public static boolean isNewVersion = version.substring(3).compareTo("13") > 0 && !version.startsWith("v1_8_") && !version.startsWith("v1_9_");
     
     public Main() {
         this.prefix = "§8§l[§c§lOPS§f§lRegion§8§l]";
@@ -46,6 +52,7 @@ public class Main extends JavaPlugin
         this.protectedMines = (ArrayList<String>)this.getConfig().getStringList("regionsmine");
         final PluginManager manager = this.getServer().getPluginManager();
         this.setupPermissions();
+        GUI gui = new GUI(this);
         manager.registerEvents(new Handler(this, this.functions, this.WorldGuard6, this.WorldGuard7), this);
         getCommand("opsrg").setExecutor(new CommandExecutor(this));
     }

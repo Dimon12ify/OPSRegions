@@ -4,7 +4,6 @@ package ru.servbuy.opsrg;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.internal.annotation.Selection;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
@@ -20,7 +19,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
@@ -35,12 +33,10 @@ public class WG7 {
         this.plugin = plugin;
         this.we = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
         this.wg = (WorldGuardPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldGuard");
-        this.version = Bukkit.getServer().getClass().getPackage().getName();
-        version = version.substring(version.lastIndexOf(".") + 1);;
     }
 
     public static boolean isWorldGuardRegion(World w, String regionName){
-        if (version.substring(3).compareTo("13") < 0 || version.startsWith("v1_8_") || version.startsWith("v1_9_")) {
+        if (!Main.isNewVersion) {
             try {
                 return WG6.isWorldGuardRegion(w, regionName);
             } catch (Exception e) {
@@ -55,9 +51,9 @@ public class WG7 {
         return false;
     }
 
-    public static String getRegionOwners(World w, String regionName){
+    public static ArrayList<String> getRegionOwners(World w, String regionName){
         Set<String> ownerSet = null;
-        if (version.substring(3).compareTo("13") < 0 || version.startsWith("v1_8_") || version.startsWith("v1_9_")) {
+        if (!Main.isNewVersion) {
             try {
                 ownerSet = WG6.getRegionOwners(w, regionName);
             } catch (Exception e) {
@@ -67,13 +63,12 @@ public class WG7 {
         else {
             ownerSet = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(w))
                     .getRegion(regionName).getOwners().getPlayers();
-            plugin.getLogger().info("end of block 2" + ownerSet.size());
         }
         String[] ownerArray = ownerSet.toArray(new String[ownerSet.size()]);
-        plugin.getLogger().info(ownerSet.toString());
         ArrayList<String> owners = new ArrayList<>();
-        //Bukkit.getPlayer(ownerArray[0]).getName()
-        return "empty";
+        for (Integer i = 0; i < ownerArray.length; i++)
+            owners.add(Bukkit.getPlayer(ownerArray[i]).getName());
+        return owners;
     }
 
     public boolean isProtectedRegion(final World w, final Location l){

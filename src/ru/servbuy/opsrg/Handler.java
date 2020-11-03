@@ -20,15 +20,12 @@ public class Handler implements Listener
     private static Functions f;
     private static WG6 wg6;
     private static WG7 wg7;
-    static String version;
 
     public Handler(final Main instance, final Functions func, final WG6 wg6, final WG7 wg7) {
         this.plugin = instance;
         this.f = func;
         this.wg6 = wg6;
         this.wg7 = wg7;
-        version = Bukkit.getServer().getClass().getPackage().getName();
-        version = version.substring(version.lastIndexOf(".") + 1);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -142,7 +139,7 @@ public class Handler implements Listener
 
 
     boolean isWGProtection(final World w, final Location l) {
-        if (version.substring(3).compareTo("13") > 0 && !version.startsWith("v1_8_") && !version.startsWith("v1_9_")){
+        if (Main.isNewVersion){
             return wg7.isProtectedRegion(w,l);
         }
         else
@@ -150,7 +147,7 @@ public class Handler implements Listener
     }
 
     boolean isWGMineProtection (final World w, final Location l) {
-        if (version.substring(3).compareTo("13") > 0 && !version.startsWith("v1_8_") && !version.startsWith("v1_9_")) {
+        if (Main.isNewVersion) {
             return wg7.isProtectedMine(w,l);
         }
         else
@@ -158,7 +155,7 @@ public class Handler implements Listener
     }
 
     boolean isWEIntersection(final Player p) {
-        if (version.substring(3).compareTo("13") > 0 && !version.startsWith("v1_8_") && !version.startsWith("v1_9_")){
+        if (Main.isNewVersion){
             try {
                 return wg7.checkIntersection(p);
             } catch (IncompleteRegionException e) {
