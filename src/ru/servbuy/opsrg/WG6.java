@@ -9,6 +9,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.*;
 import com.sk89q.worldguard.protection.regions.*;
 import com.sk89q.worldguard.protection.managers.*;
+import ru.servbuy.protectedrg.ProtectedMine;
+import ru.servbuy.protectedrg.ProtectedRG;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -21,16 +23,16 @@ public class WG6
     private WorldGuardPlugin wg;
     private WorldEditPlugin we;
 
-    public WG6(final Main instance) {
+    public WG6(final Main plugin) {
         this.wg = (WorldGuardPlugin)Bukkit.getPluginManager().getPlugin("WorldGuard");
         this.we = (WorldEditPlugin)Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
-        this.plugin = instance;
+        this.plugin = plugin;
     }
 
     boolean isProtectedRegion(final World w, final Location l) {
         try {
             ApplicableRegionSet set = getRegions(w, l);
-            return WG7.isRegionInConfig(set, false);
+            return set.getRegions().stream().anyMatch(x -> plugin.getRegions().contains(x.getId()));
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -40,7 +42,7 @@ public class WG6
     boolean isProtectedMine(final World w, final Location l){
         try {
             ApplicableRegionSet set = getRegions(w, l);
-            return WG7.isRegionInConfig(set, true);
+            return set.getRegions().stream().anyMatch(x -> plugin.getMines().contains(x.getId()));
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -56,24 +58,24 @@ public class WG6
     }
 
     public static boolean isWorldGuardRegion(World w, String s) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        final Class<?> wgBukkitClass = Class.forName("com.sk89q.worldguard.bukkit.WGBukkit");
-        final Method getRegionManager = wgBukkitClass.getDeclaredMethod("getRegionManager", World.class);
-        final Class<?> c1 = RegionManager.class;
-        final Method getRegions = c1.getDeclaredMethod("getRegions");
-        Map<String, ProtectedRegion> regions = (Map<String, ProtectedRegion>) getRegions.invoke(getRegionManager.invoke(wgBukkitClass, w));
+        Map<String, ProtectedRegion> regions = getRegions(w);
         return regions.containsKey(s);
     }
 
     public static Set<String> getRegionOwners(World w, String regionName) throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
-        final Class<?> wgBukkitClass = Class.forName("com.sk89q.worldguard.bukkit.WGBukkit");
-        final Method getRegionManager = wgBukkitClass.getDeclaredMethod("getRegionManager", World.class);
-        final Class<?> c1 = RegionManager.class;
-        final Method getRegions = c1.getDeclaredMethod("getRegions");
-        Map<String, ProtectedRegion> regions = (Map<String, ProtectedRegion>) getRegions.invoke(getRegionManager.invoke(wgBukkitClass, w));
+        Map<String, ProtectedRegion> regions = getRegions(w);
         final Class<?> ProtectedRegion = Class.forName("com.sk89q.worldguard.protection.regions.ProtectedRegion");
         final Method getOwners = ProtectedRegion.getDeclaredMethod("getOwners");
         final DefaultDomain owners = (DefaultDomain) getOwners.invoke(regions.get(regionName));
         return owners.getPlayers();
+    }
+
+    private static Map<String, ProtectedRegion> getRegions(World w) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        final Class<?> wgBukkitClass = Class.forName("com.sk89q.worldguard.bukkit.WGBukkit");
+        final Method getRegionManager = wgBukkitClass.getDeclaredMethod("getRegionManager", World.class);
+        final Class<?> c1 = RegionManager.class;
+        final Method getRegions = c1.getDeclaredMethod("getRegions");
+        return (Map<String, ProtectedRegion>) getRegions.invoke(getRegionManager.invoke(wgBukkitClass, w));
     }
 
     public boolean checkIntersection(final Player player) {

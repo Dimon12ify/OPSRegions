@@ -18,10 +18,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import ru.servbuy.protectedrg.ProtectedMine;
+import ru.servbuy.protectedrg.ProtectedRG;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class WG7 {
     private static Plugin plugin;
@@ -51,71 +52,47 @@ public class WG7 {
         return false;
     }
 
-    public static ArrayList<String> getRegionOwners(World w, String regionName){
-        Set<String> ownerSet = null;
-        if (!Main.isNewVersion) {
+    public static String getRegionOwner(World w, String regionName) {
+        Set<String> ownerSet = new HashSet<>();
+        if (Main.isNewVersion) {
+            ownerSet = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(w))
+                    .getRegion(regionName).getOwners().getPlayers();
+        } else {
             try {
                 ownerSet = WG6.getRegionOwners(w, regionName);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        else {
-            ownerSet = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(w))
-                    .getRegion(regionName).getOwners().getPlayers();
-        }
-        String[] ownerArray = ownerSet.toArray(new String[ownerSet.size()]);
-        ArrayList<String> owners = new ArrayList<>();
-        for (Integer i = 0; i < ownerArray.length; i++)
-            owners.add(Bukkit.getPlayer(ownerArray[i]).getName());
-        return owners;
+        if (ownerSet.isEmpty())
+            return "empty";
+        return ownerSet.toArray(new String[ownerSet.size()])[0];
     }
 
     public boolean isProtectedRegion(final World w, final Location l){
         ApplicableRegionSet regions = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(w))
                 .getApplicableRegions(BukkitAdapter.asBlockVector(l));
-        return isRegionInConfig(regions, false);
+        return regions.getRegions().stream().anyMatch(x -> isRegionInConfig(x, false));
     }
 
     public boolean isProtectedMine(final World w, final Location l){
         ApplicableRegionSet regions = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(w))
                 .getApplicableRegions(BukkitAdapter.asBlockVector(l));
-        return isRegionInConfig(regions, true);
+        return regions.getRegions().stream().anyMatch(x -> isRegionInConfig(x, true));
     }
 
-    public static boolean isRegionInConfig(ApplicableRegionSet regions, boolean checkMine){
+    /*public static boolean isRegionInConfig(ApplicableRegionSet regions, boolean checkMine){
         if (regions.size() == 0) return false;
-        for (final ProtectedRegion rg : regions) {
-            if (!checkMine)
-                for (final Object region : Main.protectedRegions) {
-                    if (rg.getId().equalsIgnoreCase(region.toString())) {
-                        return true;
-                    }
-                }
-            else
-                for (final Object region : Main.protectedMines) {
-                    if (rg.getId().equalsIgnoreCase(region.toString())) {
-                        return true;
-                    }
-                }
-        }
-        return false;
-    }
+        Object[] a = regions.getRegions().stream().filter(region -> ProtectedRG.atConfig(region.getId())).toArray();
+        Object[] b = regions.getRegions().stream().filter(region ->  ProtectedMine.atConfig(region.getId())).toArray();
+        return b.length > 0 && checkMine || a.length > 0 && !checkMine;
+    }*/
 
     public static boolean isRegionInConfig(ProtectedRegion region, boolean checkMine){
-        if (!checkMine)
-            for (final Object regions : Main.protectedRegions) {
-                if (region.getId().equalsIgnoreCase(regions.toString())) {
-                    return true;
-                }
-            }
-        else
-            for (final Object regions : Main.protectedMines) {
-                if (region.getId().equalsIgnoreCase(regions.toString())) {
-                    return true;
-                }
-            }
-        return false;
+            if(checkMine)
+                return ProtectedMine.atConfig(region.getId());
+            else
+                return ProtectedRG.atConfig(region.getId());
     }
 
     public boolean checkIntersection(final Player player) throws IncompleteRegionException {

@@ -2,6 +2,9 @@ package ru.servbuy.opsrg;
 
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import ru.servbuy.protectedrg.ProtectedEntity;
+import ru.servbuy.protectedrg.ProtectedMine;
+import ru.servbuy.protectedrg.ProtectedRG;
 
 import java.util.*;
 
@@ -21,47 +24,47 @@ public class Functions
         return lists;
     }
     
-    void rem(final String[] args, final CommandSender sender, final boolean b) {
-        for (final String list : this.plugin.protectedRegions) {
-            if (list.equalsIgnoreCase(args[1])) {
-                this.plugin.protectedRegions.remove(list);
-                this.plugin.getConfig().set("regions" + "." + list, null);
-                this.plugin.saveConfig();
-                sender.sendMessage(this.plugin.prefix + " §2" + args[1].toLowerCase() + " \u0443\u0434\u0430\u043b\u0435\u043d \u0438\u0437 \u043a\u043e\u043d\u0444\u0438\u0433\u0430.");
-                return;
-            }
+    void rem(String name, final CommandSender sender, final boolean mine) {
+        name = name.toLowerCase();
+        if (!ProtectedMine.atConfig(name) && mine || !ProtectedRG.atConfig(name) && !mine) {
+            sender.sendMessage(Main.prefix + " §4" + name + " нет в конфиге.");
+            return;
         }
-        sender.sendMessage(this.plugin.prefix + " §4" + args[1].toLowerCase() + " \u043d\u0435\u0442\u0443 \u0432 \u043a\u043e\u043d\u0444\u0438\u0433\u0435.");
+        String path = mine? ProtectedMine.getPath() : ProtectedRG.getPath();
+        if (mine)
+            ProtectedMine.remove(name);
+        else
+            ProtectedRG.remove(name);
+        plugin.getConfig().set(path + "." + name, null);
+        plugin.saveConfig();
+        sender.sendMessage(Main.prefix + " §2" + name + " удалён из конфига.");
     }
 
-    void add(final String[] args, final CommandSender sender, final boolean b) {
+    void add(String name, final CommandSender sender, final boolean mine) {
+        name = name.toLowerCase();
         if (sender instanceof ConsoleCommandSender){
-            sender.sendMessage("§4This command is available only for players");
+            sender.sendMessage(Main.prefix + "§4This command is available only for players");
             return;
         }
-        ArrayList<String> rg = this.plugin.protectedRegions;
-        String mine = "";
         Player p = (Player) sender;
-        if (!WG7.isWorldGuardRegion(p.getWorld(), args[1])){
-            p.sendMessage("§4There is no region §a" + args[1] + " §4in this world");
+        if (!WG7.isWorldGuardRegion(p.getWorld(), name)) {
+            p.sendMessage(Main.prefix + " §4There is no region §a" + name + " §4in this world");
             return;
         }
-        if (b) {
-            rg = this.plugin.protectedMines;
-            mine = "mine";
+        String path = mine? ProtectedMine.getPath() : ProtectedRG.getPath();
+        String world = p.getWorld().getName();
+        String addedBy = sender.getName();
+        if (ProtectedRG.getRegions().containsKey(name) && !mine || ProtectedMine.getRegions().containsKey(name) && mine) {
+            sender.sendMessage(Main.prefix + " §4" + name + " уже добавлен.");
+            return;
         }
-        for (final String list : rg) {
-            if (list.equalsIgnoreCase(args[1])) {
-                sender.sendMessage(this.plugin.prefix + " §4" + args[1].toLowerCase() + " \u0443\u0436\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d.");
-                return;
-            }
-        }
-        rg.add(args[1]);
-        //this.plugin.getConfig().set("regions" + mine, rg);
-        this.plugin.getConfig().set("regions" + mine + "." + args[1] + ".owner", WG7.getRegionOwners(p.getWorld(), args[1]));
-        this.plugin.getConfig().set("regions" + mine + "." + args[1] + ".world", p.getWorld().getName());
-        this.plugin.getConfig().set("regions" + mine + "." + args[1] + ".addedBy", sender.getName());
-        this.plugin.saveConfig();
-        sender.sendMessage(this.plugin.prefix + " §2" + args[1].toLowerCase() + " \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d \u0432 \u043a\u043e\u043d\u0444\u0438\u0433.");
+        ProtectedEntity e = mine
+                ? new ProtectedMine(name, world, addedBy)
+                : new ProtectedRG(name, world, addedBy);
+        ProtectedEntity.add(e);
+        plugin.getConfig().set(path + "." + name + ".world", world);
+        plugin.getConfig().set(path + "." + name + ".addedBy", addedBy);
+        plugin.saveConfig();
+        sender.sendMessage(Main.prefix + " §2" + name.toLowerCase() + " добавлен в конфиг.");
     }
 }

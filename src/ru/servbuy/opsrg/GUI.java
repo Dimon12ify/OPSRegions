@@ -6,6 +6,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
+import ru.servbuy.protectedrg.ProtectedRG;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +18,7 @@ public class GUI {
 
     public GUI(Plugin plugin)
     {
-        this.plugin = plugin;
+        GUI.plugin = plugin;
     }
 
     public static Inventory init(){
@@ -25,7 +26,7 @@ public class GUI {
         ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         for (int index = 18; index < 27; index++)
             i.setItem(index, item);
-        List<List<String>> splitRegions = Functions.split(Main.protectedRegions, 7);
+        List<List<String>> splitRegions = ProtectedRG.getSplitedNames();
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         FillRange(splitRegions, i, head, 0);
         return i;
@@ -38,10 +39,9 @@ public class GUI {
                 ItemMeta meta = itemStack.getItemMeta();
                 String region = regions.get(i).get(j);
                 meta.setDisplayName(region);
-                String[] description = new String[]{"Owner: " + plugin.getConfig().get(region + ".owner"),
-                        "2"};
+                String[] description = new String[]{"World: " + plugin.getConfig().getString("regions." + region + ".world"),
+                        "AddedBy: " + region + plugin.getConfig().getString("regions." + region + ".addedBy")};
                 meta.setLore(Arrays.asList(description));
-                ArrayList<String> desc = new ArrayList<>();
                 itemStack.setItemMeta(meta);
                 inv.setItem(i*9 + j + 1, itemStack);
             }

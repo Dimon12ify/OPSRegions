@@ -4,6 +4,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import ru.servbuy.protectedrg.ProtectedMine;
+import ru.servbuy.protectedrg.ProtectedRG;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,11 +14,10 @@ import java.util.function.Function;
 
 public class CommandExecutor implements org.bukkit.command.CommandExecutor {
     private Plugin plugin;
-    private String prefix;
+    private String prefix = Main.prefix;
 
     public CommandExecutor(Plugin plugin){
         this.plugin = plugin;
-        this.prefix = Main.prefix;
     }
 
     @Override
@@ -27,43 +28,23 @@ public class CommandExecutor implements org.bukkit.command.CommandExecutor {
                 sender.sendMessage(prefix + " §aPlugin was successfully reloaded.");
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("add") && sender.hasPermission("opsrg.admin")) {
-                Main.functions.add(args, sender, false);
+                Main.functions.add(args[1], sender, false);
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("del") && sender.hasPermission("opsrg.admin")) {
-                Main.functions.rem(args, sender, false);
+                Main.functions.rem(args[1], sender, false);
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("addmine") && sender.hasPermission("opsrg.admin")) {
-                Main.functions.add(args, sender, true);
+                Main.functions.add(args[1], sender, true);
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("delmine") && sender.hasPermission("opsrg.admin")) {
-                Main.functions.rem(args, sender, true);
+                Main.functions.rem(args[1], sender, true);
             }
             if (args.length <= 2 && args[0].equalsIgnoreCase("list") && sender.hasPermission("opsrg.admin")) {
-                final List<List<String>> list = Functions.split(Main.protectedRegions, 6);
-                int x = 0;
-                if (args.length == 2 && args[1].matches("^[0-9]{1,3}$") && Integer.parseInt(args[1]) <= list.size()) {
-                    x = Integer.parseInt(args[1]) - 1;
-                }
-                final int s = 1 + x;
-                sender.sendMessage(prefix + " §3Page " + s + "/" + list.size());
-                for (final String ls : list.get(x)) {
-                    sender.sendMessage(prefix + " §2" + ls);
-                }
-                sender.sendMessage("");
+                paginate(sender, args, false);
                 return true;
             }
             if (args.length <= 2 && args[0].equalsIgnoreCase("listmine") && sender.hasPermission("opsrg.admin")) {
-                final List<List<String>> list = Functions.split(Main.protectedMines, 6);
-                int x = 0;
-                if (args.length == 2 && args[1].matches("^[0-9]{1,3}$") && Integer.parseInt(args[1]) <= list.size()) {
-                    x = Integer.parseInt(args[1]) - 1;
-                }
-                final int s = 1 + x;
-                sender.sendMessage(prefix + " §3Page " + s + "/" + list.size());
-                for (final String ls : list.get(x)) {
-                    sender.sendMessage(prefix + " §2" + ls);
-                }
-                sender.sendMessage("");
+                paginate(sender, args, true);
                 return true;
             }
         }
@@ -74,15 +55,32 @@ public class CommandExecutor implements org.bukkit.command.CommandExecutor {
         return false;
     }
 
-    public void onReload() {
-        plugin.reloadConfig();
-        Set<String> rgset = plugin.getConfig().getConfigurationSection("regions").getKeys(false);
-        if (rgset.size() == 0 || rgset == null)
-            Main.protectedRegions = new ArrayList<>();
-        else
-            Main.protectedRegions = new ArrayList<>(plugin.getConfig().getConfigurationSection("regions").getKeys(false));
-        Main.protectedMines = (ArrayList<String>)plugin.getConfig().getStringList("regionsmine");
+    private void paginate(CommandSender sender, String[] args, boolean mine) {
+        int page = 1;
+        final List<List<String>> lists = mine
+                ? ProtectedMine.getSplitedNames()
+                : ProtectedRG.getSplitedNames();
+        if (args.length == 2 && args[1].matches("^[0-9]{1,3}$") && Integer.parseInt(args[1]) <= lists.size()) {
+            page = Integer.parseInt(args[1]);
+        }
+        sender.sendMessage(prefix + " §3Page " + page + "/" + lists.size());
+        for (final String item : lists.get(page - 1)) {
+            sender.sendMessage(prefix + " §2" + item);
+        }
+        sender.sendMessage("");
     }
 
-
+    public void onReload() {
+        plugin.reloadConfig();
+        ProtectedRG.clear();
+        ProtectedMine.clear();
+        plugin.getConfig().getConfigurationSection("regions").getKeys(false)
+                .forEach(name -> ProtectedRG.add(new ProtectedRG(name,
+                        plugin.getConfig().getString(ProtectedRG.getPath() + "." + name + ".world"),
+                        plugin.getConfig().getString(ProtectedRG.getPath() + "." + name + ".addedBy"))));
+        plugin.getConfig().getConfigurationSection("mines").getKeys(false)
+                .forEach(name -> ProtectedMine.add(new ProtectedMine(name,
+                        plugin.getConfig().getString(ProtectedMine.getPath() + "." + name + ".world"),
+                        plugin.getConfig().getString(ProtectedMine.getPath() + "." + name + ".addedBy"))));
+    }
 }

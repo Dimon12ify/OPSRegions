@@ -17,31 +17,30 @@ import org.bukkit.inventory.ItemStack;
 public class Handler implements Listener
 {
     private static Main plugin;
-    private static Functions f;
-    private static WG6 wg6;
-    private static WG7 wg7;
+    private static Functions f = Main.functions;
+    private static WG6 wg6 = Main.WorldGuard6;
+    private static WG7 wg7 = Main.WorldGuard7;
 
-    public Handler(final Main instance, final Functions func, final WG6 wg6, final WG7 wg7) {
-        this.plugin = instance;
-        this.f = func;
-        this.wg6 = wg6;
-        this.wg7 = wg7;
+    public Handler(final Main plugin) {
+        this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     void onBlockBreak(final BlockBreakEvent e) {
         final Player p = e.getPlayer();
-        if (!p.hasPermission("OPSRegion.admin") && isWGProtection(p.getWorld(), e.getBlock().getLocation())
-                && !isWGMineProtection(p.getWorld(), e.getBlock().getLocation()))
-            e.setCancelled(true);
+        if (p.hasPermission("OPSRegion.admin") || isWGMineProtection(p.getWorld(), e.getBlock().getLocation())) {
+            e.setCancelled(false);
+            return;
+        }
+        e.setCancelled(isWGProtection(p.getWorld(), e.getBlock().getLocation()));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     void onBlockPlace(final BlockPlaceEvent e) {
         final Player p = e.getPlayer();
-        if (!p.hasPermission("OPSRegion.admin") && this.isWGProtection(p.getWorld(), e.getBlock().getLocation())
+        if (!p.hasPermission("OPSRegion.admin") && isWGProtection(p.getWorld(), e.getBlock().getLocation())
         && !isWGMineProtection(p.getWorld(), e.getBlock().getLocation())) {
-            p.sendMessage("§cInterraction stopped");
+            p.sendMessage("§cInteraction stopped");
             e.setCancelled(true);
         }
     }
@@ -121,29 +120,12 @@ public class Handler implements Listener
     }
 
 
-    @EventHandler
-    void onInventoryMoveItem(InventoryMoveItemEvent e){
-        if (e.getDestination().equals(GUI.getInventory())){
-            e.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    void onInventoryClick(InventoryClickEvent e){
-        if (!e.getInventory().equals(GUI.getInventory())) return;
-        Inventory c = e.getClickedInventory();
-        if (c == null) return;
-        if (c.equals(GUI.getInventory()) || e.getCursor() != null || e.getCursor() != new ItemStack(Material.AIR))
-            e.setCancelled(true);
-    }
-
-
     boolean isWGProtection(final World w, final Location l) {
         if (Main.isNewVersion){
             return wg7.isProtectedRegion(w,l);
         }
         else
-            return this.wg6.isProtectedRegion(w, l);
+            return wg6.isProtectedRegion(w, l);
     }
 
     boolean isWGMineProtection (final World w, final Location l) {
@@ -151,7 +133,7 @@ public class Handler implements Listener
             return wg7.isProtectedMine(w,l);
         }
         else
-            return this.wg6.isProtectedMine(w, l);
+            return wg6.isProtectedMine(w, l);
     }
 
     boolean isWEIntersection(final Player p) {

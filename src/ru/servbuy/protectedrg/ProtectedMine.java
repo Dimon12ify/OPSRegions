@@ -1,43 +1,55 @@
 package ru.servbuy.protectedrg;
 
-import java.util.ArrayList;
+import ru.servbuy.opsrg.Functions;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
-public class ProtectedRG implements ProtectedEntity{
-    private final static String path = "regions";
+public class ProtectedMine implements ProtectedEntity{
+    private final static String path = "mines";
     private final String name;
     private final String world;
-    private final String owner;
     private final String addedBy;
-    private static final Map<String, ProtectedRG> regions = new IdentityHashMap<>();
+    private static final Map<String, ProtectedMine> regions = new IdentityHashMap<>();
 
-    public ProtectedRG(String name, String owner, String world, String addedBy){
+    public ProtectedMine(String name, String world, String addedBy){
         this.world = world;
-        this.owner = owner;
         this.addedBy = addedBy;
         this.name = name;
         regions.put(name, this);
     }
 
-    public String getPath() {
+    public static String getPath() {
         return path;
     }
 
-    public static void add(ProtectedRG region) {
+    public static void add(ProtectedMine region) {
         regions.put(region.name, region);
     }
 
-    public static void remove(ProtectedRG region) {
-        regions.remove(region.name);
+    public static void remove(String name) {
+        regions.remove(name);
     }
 
     public void remove() {
         regions.remove(this.name);
     }
 
-    public static Map<String,ProtectedRG> getRegions() {
+    public static void clear() {
+        regions.clear();
+    }
+
+    public static boolean atConfig(String name) {
+        return regions.keySet().contains(name);
+    }
+
+    public static Map<String, ProtectedMine> getRegions() {
         return regions;
+    }
+
+    public static List<List<String>> getSplitedNames() {
+        return Functions.split(new ArrayList<>(regions.keySet()),7);
     }
 }

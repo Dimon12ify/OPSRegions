@@ -8,6 +8,10 @@
 # opsrg listmine
 # opsrg listmine number
 regions:
-- yourProtectedRegion
-regionsmine:
-- youtMineRegion
+  yourprotectedregion:
+    world: World
+    addedBy: FlamesYT
+mines:
+  yourmineregion:
+    world: World
+    addedBy: FlamesYT
